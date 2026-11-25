@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Find Your Twin — create printable identity cards for a classroom speaking activity.">
+<title>Find Your Twin</title>
+<style>
+:root{--ink:#172b4d;--muted:#62718a;--blue:#2457a7;--blue-dark:#173f80;--pale:#eef4fc;--line:#d8e0ec;--paper:#fff;--bg:#f4f6fa;--green:#237a57;--red:#b33a3a;--shadow:0 8px 26px rgba(26,48,82,.08)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif;line-height:1.45}
+header{background:linear-gradient(115deg,#183d78,#2b65b5);color:white;padding:28px max(22px,calc((100% - 1120px)/2));}
+header .eyebrow{font-size:.76rem;letter-spacing:.16em;text-transform:uppercase;opacity:.82;font-weight:700}
+h1{font-size:clamp(2rem,4vw,2.8rem);margin:5px 0 3px;letter-spacing:-.03em}
+header p{margin:0;color:#e3edff;max-width:680px}
+main{max-width:1120px;margin:28px auto 60px;padding:0 20px}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:24px;margin:0 0 20px;box-shadow:var(--shadow)}
+.panel h2{font-size:1.2rem;margin:0 0 5px}
+.sub{color:var(--muted);font-size:.92rem;margin:0 0 18px}
+.top-grid{display:grid;grid-template-columns: minmax(220px,330px) 1fr;gap:24px;align-items:start}
+label{font-weight:700;font-size:.92rem;display:block;margin-bottom:7px}
+input[type=number],.value-input{width:100%;border:1px solid #c8d3e2;border-radius:8px;padding:10px 11px;font:inherit;color:var(--ink);background:white;min-width:0}
+input:focus{outline:3px solid #cfe0fb;border-color:var(--blue)}
+.hint{font-size:.82rem;color:var(--muted);margin-top:6px}
+.criteria{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.criterion-option{border:1px solid var(--line);border-radius:9px;padding:10px 11px;display:flex;align-items:center;gap:8px;font-size:.9rem;font-weight:600;cursor:pointer;background:#fff}
+.criterion-option:has(input:checked){background:var(--pale);border-color:#9bb8e5}
+.criterion-option input{accent-color:var(--blue);width:16px;height:16px;margin:0}
+#valueSections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.value-section{border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.value-section h3{margin:0 0 3px;font-size:1rem}
+.value-section .section-note{font-size:.8rem;color:var(--muted);margin:0 0 12px}
+.value-list{display:grid;gap:7px}
+.value-row{display:flex;gap:7px;align-items:center}
+.value-row input{flex:1}
+.remove-value{border:0;background:#f2f4f8;color:#66758b;border-radius:7px;width:36px;height:39px;font-size:1.2rem;cursor:pointer}
+.remove-value:hover{background:#fceaea;color:var(--red)}
+.add-value{margin-top:10px;border:1px solid #b9cbe5;background:#f5f8fd;color:var(--blue-dark);font-weight:700;border-radius:8px;padding:8px 12px;cursor:pointer}
+.add-value:hover{background:#eaf1fc}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+button.primary,button.secondary{border-radius:9px;padding:11px 17px;font:700 .94rem Arial,sans-serif;cursor:pointer}
+button.primary{border:1px solid var(--blue);background:var(--blue);color:white}
+button.primary:hover{background:var(--blue-dark)}
+button.secondary{border:1px solid #c6d2e2;background:white;color:var(--ink)}
+button.secondary:hover{background:#f3f6fb}
+button:disabled{opacity:.45;cursor:not-allowed}
+#message{margin-top:14px;padding:12px 14px;border-radius:9px;display:none;font-size:.9rem}
+#message.error{display:block;background:#fff0f0;border:1px solid #f0caca;color:#8f2828}
+#message.success{display:block;background:#edf8f2;border:1px solid #c7e6d3;color:#216446}
+#previewPanel{display:none}
+.preview-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:15px}
+.preview-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.identity-card{border:1px solid #bfcbd9;border-radius:10px;padding:13px;background:white;break-inside:avoid;page-break-inside:avoid;min-width:0}
+.portrait-wrap{height:112px;display:flex;justify-content:center;align-items:center;margin-bottom:5px}
+.portrait{height:106px;width:106px;object-fit:contain;border-radius:8px}
+.portrait-fallback{height:100px;width:100px;border-radius:50%;background:#eef2f7;display:flex;align-items:center;justify-content:center;color:#718096;font-size:.8rem;text-align:center;padding:8px}
+.person-name{text-align:center;font-size:1.18rem;font-weight:800;margin:0 0 11px;color:#183d78}
+.identity-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:.85rem}
+.identity-table td{border:1px solid #9eacbd;padding:7px 8px;vertical-align:middle;overflow-wrap:anywhere}
+.identity-table td:first-child{width:42%;font-weight:700;background:#f2f5f9}
+.small-note{font-size:.82rem;color:var(--muted)}
+#printArea{display:none}
+footer{text-align:center;color:#77849a;font-size:.78rem;padding:0 20px 30px}
+@media(max-width:850px){.criteria{grid-template-columns:repeat(3,minmax(0,1fr))}.top-grid{grid-template-columns:1fr}}
+@media(max-width:620px){main{padding:0 12px}.panel{padding:17px}.criteria{grid-template-columns:repeat(2,minmax(0,1fr))}#valueSections{grid-template-columns:1fr}.preview-pair{grid-template-columns:1fr}.preview-heading{align-items:flex-start;flex-direction:column}}
+@page{size:A4 portrait;margin:10mm}
+@media print{
+ body{background:white;color:#111;font-family:Arial,Helvetica,sans-serif}
+ header,main,footer{display:none!important}
+ #printArea{display:block!important}
+ #printArea .print-grid{display:flex;flex-wrap:wrap;align-items:flex-start;gap:7mm 6mm}
+ #printArea .identity-card{width:calc(50% - 3mm);border:1px solid #555;border-radius:0;padding:3.5mm;box-shadow:none;margin:0}
+ #printArea .portrait-wrap{height:29mm;margin-bottom:1mm}
+ #printArea .portrait{height:28mm;width:28mm}
+ #printArea .portrait-fallback{height:27mm;width:27mm;font-size:7pt}
+ #printArea .person-name{font-size:12pt;margin:0 0 2.5mm;color:#111}
+ #printArea .identity-table{font-size:8.5pt}
+ #printArea .identity-table td{padding:1.5mm 1.8mm;border:0.25mm solid #666}
+ #printArea .identity-table td:first-child{background:#f0f0f0}
+ #printArea .identity-card{break-inside:avoid;page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">Classroom speaking activity</div>
+  <h1>Find Your Twin</h1>
+  <p>Create identity cards and help pupils find the classmate who shares their profile.</p>
+</header>
+<main>
+  <section class="panel">
+    <h2>1. Set up your class</h2>
+    <p class="sub">Choose the number of pupils and the information pupils will use to describe themselves.</p>
+    <div class="top-grid">
+      <div>
+        <label for="classSize">Number of pupils</label>
+        <input id="classSize" type="number" min="6" max="30" step="1" value="6">
+        <div class="hint">Choose a number from 6 to 30. For an odd number, one extra identity card will be created.</div>
+      </div>
+      <div>
+        <label>Choose the identity criteria</label>
+        <div class="criteria" id="criteriaOptions"></div>
+        <div class="hint">Select at least one criterion. You can select as many as you need.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>2. Add the vocabulary</h2>
+    <p class="sub">For each selected criterion, enter at least four different answers. Add as many as you like. Empty fields are ignored.</p>
+    <div id="emptyCriteria" class="small-note">Select one or more criteria above to enter the vocabulary.</div>
+    <div id="valueSections"></div>
+    <div class="actions">
+      <button class="primary" id="previewBtn" type="button">Preview first pair</button>
+      <button class="secondary" id="pdfBtn" type="button" disabled>Generate PDF</button>
+    </div>
+    <div id="message" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="panel" id="previewPanel">
+    <div class="preview-heading">
+      <div><h2>3. Preview</h2><p class="sub" style="margin:3px 0 0">The first pair of identity cards is shown below.</p></div>
+      <span class="small-note" id="previewMeta"></span>
+    </div>
+    <div class="preview-pair" id="previewCards"></div>
+    <div class="actions"><button class="primary" id="previewPdfBtn" type="button">Generate PDF</button></div>
+    <p class="small-note">In the print window, choose “Save as PDF” as the destination. Print settings: A4, portrait, scale 100% (or default).</p>
+  </section>
+</main>
+<footer>Find Your Twin · A classroom resource</footer>
+<div id="printArea" aria-hidden="true"></div>
+<script>
+'use strict';
+const IDENTITIES = [
+  {image:'Face_01.jpg',name:'Cassandra',pair:1},{image:'Face_02.jpg',name:'Marlena',pair:1},
+  {image:'Face_03.jpg',name:'Jake',pair:2},{image:'Face_04.jpg',name:'Davina',pair:2},
+  {image:'Face_05.jpg',name:'Emma',pair:3},{image:'Face_06.jpg',name:'Aubrey',pair:3},
+  {image:'Face_07.jpg',name:'Simon',pair:4},{image:'Face_08.jpg',name:'Greg',pair:4},
+  {image:'Face_09.jpg',name:'Ameli',pair:5},{image:'Face_10.jpg',name:'Ashley',pair:5},
+  {image:'Face_11.jpg',name:'Trudie',pair:6},{image:'Face_12.jpg',name:'Thea',pair:6},
+  {image:'Face_13.jpg',name:'Kriya',pair:7},{image:'Face_14.jpg',name:'Eesha',pair:7},
+  {image:'Face_15.jpg',name:'Onika',pair:8},{image:'Face_16.jpg',name:'Bess',pair:8},
+  {image:'Face_17.jpg',name:'Jasleen',pair:9},{image:'Face_18.jpg',name:'Melina',pair:9},
+  {image:'Face_19.jpg',name:'Erin',pair:10},{image:'Face_20.jpg',name:'Shruti',pair:10},
+  {image:'Face_21.jpg',name:'Misk',pair:11},{image:'Face_22.jpg',name:'Felicity',pair:11},
+  {image:'Face_23.jpg',name:'Chuck',pair:12},{image:'Face_24.jpg',name:'Camila',pair:12},
+  {image:'Face_25.jpg',name:'Madelyn',pair:13},{image:'Face_26.jpg',name:'Megan',pair:13},
+  {image:'Face_27.jpg',name:'Senami',pair:14},{image:'Face_28.jpg',name:'Victoria',pair:14},
+  {image:'Face_29.jpg',name:'Alexa',pair:15},{image:'Face_30.jpg',name:'William',pair:15}
+];
+const CRITERIA = ['Age','City','Phone number','Brother','Sister','Favourite food','Favourite fruit','Favourite colour','Pet','Sport'];
+const selected = new Set();
+const valuesByCriterion = {};
+let generatedCards = [];
+let currentProfiles = [];
+const $ = id => document.getElementById(id);
+
+function init(){
+  const options = $('criteriaOptions');
+  CRITERIA.forEach((name,index)=>{
+    const label=document.createElement('label'); label.className='criterion-option';
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.value=name; cb.id='criterion-'+index;
+    cb.addEventListener('change',()=>toggleCriterion(name,cb.checked));
+    const span=document.createElement('span'); span.textContent=name;
+    label.append(cb,span); options.append(label);
+  });
+  $('classSize').addEventListener('input',()=>invalidateGenerated());
+  $('previewBtn').addEventListener('click',showPreview);
+  $('pdfBtn').addEventListener('click',printCards);
+  $('previewPdfBtn').addEventListener('click',printCards);
+}
+function toggleCriterion(name,isSelected){
+  if(isSelected){selected.add(name); if(!valuesByCriterion[name]) valuesByCriterion[name]=['','','','',''];}
+  else selected.delete(name);
+  renderValueSections(); invalidateGenerated();
+}
+function renderValueSections(){
+  const root=$('valueSections'); root.innerHTML='';
+  $('emptyCriteria').style.display=selected.size?'none':'block';
+  CRITERIA.filter(c=>selected.has(c)).forEach(name=>{
+    const section=document.createElement('div'); section.className='value-section';
+    const title=document.createElement('h3'); title.textContent=name;
+    const note=document.createElement('p'); note.className='section-note'; note.textContent='Enter at least 4 different values.';
+    const list=document.createElement('div'); list.className='value-list';
+    valuesByCriterion[name].forEach((value,index)=>{
+      const row=document.createElement('div'); row.className='value-row';
+      const input=document.createElement('input'); input.className='value-input'; input.type='text'; input.value=value; input.placeholder='Enter a value'; input.setAttribute('aria-label',name+' value '+(index+1));
+      input.addEventListener('input',()=>{valuesByCriterion[name][index]=input.value; invalidateGenerated(false);});
+      const remove=document.createElement('button'); remove.type='button'; remove.className='remove-value'; remove.textContent='×'; remove.title='Remove value'; remove.setAttribute('aria-label','Remove '+name+' value '+(index+1));
+      remove.addEventListener('click',()=>{valuesByCriterion[name].splice(index,1); renderValueSections(); invalidateGenerated();});
+      row.append(input,remove); list.append(row);
+    });
+    const add=document.createElement('button'); add.type='button'; add.className='add-value'; add.textContent='+ Add a value';
+    add.addEventListener('click',()=>{valuesByCriterion[name].push('');renderValueSections();const inputs=list.parentElement.querySelectorAll('input');inputs[inputs.length-1]?.focus();invalidateGenerated();});
+    section.append(title,note,list,add); root.append(section);
+  });
+}
+function invalidateGenerated(clearMessage=true){
+  generatedCards=[];currentProfiles=[];$('pdfBtn').disabled=true;$('previewPanel').style.display='none';
+  if(clearMessage) hideMessage();
+}
+function showMessage(type,text){const m=$('message');m.className=type;m.textContent=text;}
+function hideMessage(){const m=$('message');m.className='';m.textContent='';}
+function collectAndValidate(){
+  const size=Number($('classSize').value);
+  if(!Number.isInteger(size)||size<6||size>30) throw new Error('Please enter a class size between 6 and 30 pupils.');
+  if(selected.size===0) throw new Error('Please select at least one identity criterion.');
+  const criteria=[];
+  for(const name of CRITERIA){if(!selected.has(name))continue;
+    const vals=(valuesByCriterion[name]||[]).map(v=>v.trim()).filter(Boolean);
+    const seen=new Set();const duplicates=[];
+    vals.forEach(v=>{const key=v.toLocaleLowerCase();if(seen.has(key))duplicates.push(v);seen.add(key);});
+    if(vals.length<4) throw new Error(name+': please enter at least 4 non-empty values.');
+    if(duplicates.length) throw new Error(name+': duplicate values are not allowed ('+[...new Set(duplicates)].join(', ')+').');
+    criteria.push({name,values:vals});
+  }
+  const pairCount=Math.ceil(size/2);
+  const combinationCount=criteria.reduce((total,c)=>total*c.values.length,1);
+  if(combinationCount<pairCount) throw new Error('There are not enough different profiles. You need '+pairCount+' unique profiles, but your selected criteria allow only '+combinationCount+'. Add more values or select more criteria.');
+  return {size,pairCount,criteria,combinationCount};
+}
+function createUniqueProfiles(criteria,count){
+  const profiles=[],seen=new Set();let attempts=0;
+  while(profiles.length<count&&attempts<200000){
+    attempts++;
+    const profile=criteria.map(c=>c.values[Math.floor(Math.random()*c.values.length)]);
+    const key=profile.map(v=>v.toLocaleLowerCase()).join('\u001f');
+    if(!seen.has(key)){seen.add(key);profiles.push(profile);}
+  }
+  if(profiles.length<count) throw new Error('The app could not create enough unique profiles. Please add more values or criteria and try again.');
+  return profiles;
+}
+function makeCard(identity,criteria,profile){return {identity,criteria,profile};}
+function buildCards(data){
+  const profiles=createUniqueProfiles(data.criteria,data.pairCount);
+  const cards=[];
+  for(let i=0;i<data.pairCount;i++){
+    const first=IDENTITIES[i*2],second=IDENTITIES[i*2+1];
+    cards.push(makeCard(first,data.criteria,profiles[i]));
+    cards.push(makeCard(second,data.criteria,profiles[i]));
+  }
+  currentProfiles=profiles;
+  generatedCards=cards;
+  return cards;
+}
+function makeIdentityCard(card){
+  const article=document.createElement('article');article.className='identity-card';
+  const portraitWrap=document.createElement('div');portraitWrap.className='portrait-wrap';
+  const img=document.createElement('img');img.className='portrait';img.src='IMG/'+card.identity.image;img.alt='Portrait of '+card.identity.name;
+  img.onerror=()=>{const fallback=document.createElement('div');fallback.className='portrait-fallback';fallback.textContent=card.identity.image+' not found';img.replaceWith(fallback);};
+  portraitWrap.append(img);
+  const name=document.createElement('div');name.className='person-name';name.textContent=card.identity.name;
+  const table=document.createElement('table');table.className='identity-table';const tbody=document.createElement('tbody');
+  card.criteria.forEach((criterion,index)=>{const tr=document.createElement('tr');const td1=document.createElement('td');td1.textContent=criterion.name;const td2=document.createElement('td');td2.textContent=card.profile[index];tr.append(td1,td2);tbody.append(tr);});
+  table.append(tbody);article.append(portraitWrap,name,table);return article;
+}
+function showPreview(){
+  hideMessage();
+  try{
+    const data=collectAndValidate();const cards=buildCards(data);
+    $('previewCards').innerHTML='';$('previewCards').append(makeIdentityCard(cards[0]),makeIdentityCard(cards[1]));
+    $('previewMeta').textContent=data.pairCount+' pairs · '+cards.length+' cards · '+data.combinationCount+' possible profiles';
+    $('previewPanel').style.display='block';$('pdfBtn').disabled=false;
+    showMessage('success','Your profiles are ready. Each pair shares the same characteristics, and every pair has a unique profile.');
+    $('previewPanel').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(error){showMessage('error',error.message);}
+}
+function printCards(){
+  if(!generatedCards.length){showPreview();if(!generatedCards.length)return;}
+  const area=$('printArea');area.innerHTML='';const grid=document.createElement('div');grid.className='print-grid';
+  generatedCards.forEach(card=>grid.append(makeIdentityCard(card)));
+  area.append(grid);
+  window.print();
+}
+init();
+</script>
+</body>
+</html>
