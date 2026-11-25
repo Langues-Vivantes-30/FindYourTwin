@@ -22,10 +22,15 @@ label{font-weight:700;font-size:.92rem;display:block;margin-bottom:7px}
 input[type=number],.value-input{width:100%;border:1px solid #c8d3e2;border-radius:8px;padding:10px 11px;font:inherit;color:var(--ink);background:white;min-width:0}
 input:focus{outline:3px solid #cfe0fb;border-color:var(--blue)}
 .hint{font-size:.82rem;color:var(--muted);margin-top:6px}
-.criteria{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.criteria{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .criterion-option{border:1px solid var(--line);border-radius:9px;padding:10px 11px;display:flex;align-items:center;gap:8px;font-size:.9rem;font-weight:600;cursor:pointer;background:#fff}
 .criterion-option:has(input:checked){background:var(--pale);border-color:#9bb8e5}
 .criterion-option input{accent-color:var(--blue);width:16px;height:16px;margin:0}
+.criterion-option input:disabled{opacity:.35}
+.criterion-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px}
+.criterion-tools .hint{margin:0}
+.other-title{margin:0 0 12px}
+.other-title input{width:100%;border:1px solid #c8d3e2;border-radius:8px;padding:9px 10px;font:inherit;color:var(--ink)}
 #valueSections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .value-section{border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
 .value-section h3{margin:0 0 3px;font-size:1rem}
@@ -100,14 +105,14 @@ footer{text-align:center;color:#77849a;font-size:.78rem;padding:0 20px 30px}
       <div>
         <label>Choose the identity criteria</label>
         <div class="criteria" id="criteriaOptions"></div>
-        <div class="hint">Select at least one criterion. You can select as many as you need.</div>
+        <div class="criterion-tools"><button class="add-value" id="addCriterionBtn" type="button">+ Add another criterion</button><div class="hint" id="criteriaLimitHint">Choose up to 3 criteria. You can unlock more when needed.</div></div>
       </div>
     </div>
   </section>
 
   <section class="panel">
     <h2>2. Add the vocabulary</h2>
-    <p class="sub">For each selected criterion, enter at least four different answers. Add as many as you like. Empty fields are ignored.</p>
+    <p class="sub">Enter the possible answers for each selected criterion. Age requires exactly 2 values; all other criteria require at least 3. Empty fields are ignored.</p>
     <div id="emptyCriteria" class="small-note">Select one or more criteria above to enter the vocabulary.</div>
     <div id="valueSections"></div>
     <div class="actions">
@@ -148,51 +153,90 @@ const IDENTITIES = [
   {image:'Face_27.jpg',name:'Senami',pair:14},{image:'Face_28.jpg',name:'Victoria',pair:14},
   {image:'Face_29.jpg',name:'Alexa',pair:15},{image:'Face_30.jpg',name:'William',pair:15}
 ];
-const CRITERIA = ['Age','City','Phone number','Brother','Sister','Favourite food','Favourite fruit','Favourite colour','Pet','Sport'];
+const CRITERIA = ['Age','City','Phone number','Brother','Sister','Favourite food','Favourite colour','Pet','Sport','Other'];
+const NUMERIC_CRITERIA = new Set(['Age','Phone number','Brother','Sister']);
 const selected = new Set();
 const valuesByCriterion = {};
+const titlesByCriterion = {};
+let criteriaLimit = 3;
 let generatedCards = [];
 let currentProfiles = [];
 const $ = id => document.getElementById(id);
 
 function init(){
-  const options = $('criteriaOptions');
-  CRITERIA.forEach((name,index)=>{
-    const label=document.createElement('label'); label.className='criterion-option';
-    const cb=document.createElement('input'); cb.type='checkbox'; cb.value=name; cb.id='criterion-'+index;
-    cb.addEventListener('change',()=>toggleCriterion(name,cb.checked));
-    const span=document.createElement('span'); span.textContent=name;
-    label.append(cb,span); options.append(label);
-  });
+  renderCriterionOptions();
+  $('addCriterionBtn').addEventListener('click',()=>{if(criteriaLimit<CRITERIA.length){criteriaLimit++;renderCriterionOptions();}});
   $('classSize').addEventListener('input',()=>invalidateGenerated());
   $('previewBtn').addEventListener('click',showPreview);
   $('pdfBtn').addEventListener('click',printCards);
   $('previewPdfBtn').addEventListener('click',printCards);
+  updateCriterionLimitUI();
+}
+function renderCriterionOptions(){
+  const options=$('criteriaOptions');options.innerHTML='';
+  CRITERIA.forEach((name,index)=>{
+    const label=document.createElement('label');label.className='criterion-option';
+    const cb=document.createElement('input');cb.type='checkbox';cb.value=name;cb.id='criterion-'+index;cb.checked=selected.has(name);
+    cb.disabled=!selected.has(name)&&selected.size>=criteriaLimit;
+    cb.addEventListener('change',()=>toggleCriterion(name,cb.checked));
+    const span=document.createElement('span');span.textContent=name;
+    label.append(cb,span);options.append(label);
+  });
+  updateCriterionLimitUI();
+}
+function updateCriterionLimitUI(){
+  $('addCriterionBtn').style.display=criteriaLimit>=CRITERIA.length?'none':'inline-block';
+  $('criteriaLimitHint').textContent='Choose up to '+criteriaLimit+' criteria. You can unlock more when needed.';
 }
 function toggleCriterion(name,isSelected){
-  if(isSelected){selected.add(name); if(!valuesByCriterion[name]) valuesByCriterion[name]=['','','','',''];}
-  else selected.delete(name);
-  renderValueSections(); invalidateGenerated();
+  if(isSelected){
+    selected.add(name);
+    if(!valuesByCriterion[name]){
+      if(name==='Age') valuesByCriterion[name]=['',''];
+      else if(name==='City') valuesByCriterion[name]=['London','New York','Sydney'];
+      else valuesByCriterion[name]=['','',''];
+    }
+    if(name==='Other'&&!titlesByCriterion[name])titlesByCriterion[name]='';
+  }else selected.delete(name);
+  renderCriterionOptions();renderValueSections();invalidateGenerated();
 }
 function renderValueSections(){
-  const root=$('valueSections'); root.innerHTML='';
+  const root=$('valueSections');root.innerHTML='';
   $('emptyCriteria').style.display=selected.size?'none':'block';
   CRITERIA.filter(c=>selected.has(c)).forEach(name=>{
-    const section=document.createElement('div'); section.className='value-section';
-    const title=document.createElement('h3'); title.textContent=name;
-    const note=document.createElement('p'); note.className='section-note'; note.textContent='Enter at least 4 different values.';
-    const list=document.createElement('div'); list.className='value-list';
+    const section=document.createElement('div');section.className='value-section';
+    const displayName=name==='Other'?(titlesByCriterion.Other||'Other'):name;
+    const title=document.createElement('h3');title.textContent=name==='Other'?'Other':displayName;
+    const note=document.createElement('p');note.className='section-note';
+    if(name==='Age')note.textContent='Enter exactly 2 different numeric values.';
+    else if(NUMERIC_CRITERIA.has(name))note.textContent=(name==='Brother'||name==='Sister'?'Numeric values only. Do not count your twin.':'Enter at least 3 different numeric values.');
+    else if(name==='City')note.textContent='Three example cities are provided. You can edit them or add more.';
+    else if(name==='Other')note.textContent='Give this criterion a title, then enter at least 3 different values.';
+    else note.textContent='Enter at least 3 different values.';
+    if(name==='Other'){
+      const titleWrap=document.createElement('div');titleWrap.className='other-title';
+      const titleInput=document.createElement('input');titleInput.type='text';titleInput.placeholder='Enter a criterion title';titleInput.value=titlesByCriterion.Other||'';titleInput.setAttribute('aria-label','Other criterion title');
+      titleInput.addEventListener('input',()=>{titlesByCriterion.Other=titleInput.value;title.textContent=titleInput.value.trim()||'Other';invalidateGenerated(false);});
+      titleWrap.append(titleInput);section.append(title,note,titleWrap);
+    }else section.append(title,note);
+    if(name==='Brother'||name==='Sister'){
+      const instruction=document.createElement('p');instruction.className='section-note';instruction.textContent='Do not count your twin.';instruction.style.fontWeight='700';section.append(instruction);
+    }
+    const list=document.createElement('div');list.className='value-list';
     valuesByCriterion[name].forEach((value,index)=>{
-      const row=document.createElement('div'); row.className='value-row';
-      const input=document.createElement('input'); input.className='value-input'; input.type='text'; input.value=value; input.placeholder='Enter a value'; input.setAttribute('aria-label',name+' value '+(index+1));
-      input.addEventListener('input',()=>{valuesByCriterion[name][index]=input.value; invalidateGenerated(false);});
-      const remove=document.createElement('button'); remove.type='button'; remove.className='remove-value'; remove.textContent='×'; remove.title='Remove value'; remove.setAttribute('aria-label','Remove '+name+' value '+(index+1));
-      remove.addEventListener('click',()=>{valuesByCriterion[name].splice(index,1); renderValueSections(); invalidateGenerated();});
-      row.append(input,remove); list.append(row);
+      const row=document.createElement('div');row.className='value-row';
+      const input=document.createElement('input');input.className='value-input';input.type='text';input.value=value;input.placeholder=NUMERIC_CRITERIA.has(name)?'Enter a number':'Enter a value';input.setAttribute('aria-label',name+' value '+(index+1));
+      if(NUMERIC_CRITERIA.has(name)){input.inputMode='numeric';input.pattern='[0-9]*';input.autocomplete='off';}
+      input.addEventListener('input',()=>{let v=input.value;if(NUMERIC_CRITERIA.has(name)){v=v.replace(/[^0-9]/g,'');input.value=v;}valuesByCriterion[name][index]=v;invalidateGenerated(false);});
+      const remove=document.createElement('button');remove.type='button';remove.className='remove-value';remove.textContent='×';remove.title='Remove value';remove.setAttribute('aria-label','Remove '+name+' value '+(index+1));
+      if(name==='Age')remove.style.display='none';
+      remove.addEventListener('click',()=>{valuesByCriterion[name].splice(index,1);renderValueSections();invalidateGenerated();});
+      row.append(input,remove);list.append(row);
     });
-    const add=document.createElement('button'); add.type='button'; add.className='add-value'; add.textContent='+ Add a value';
-    add.addEventListener('click',()=>{valuesByCriterion[name].push('');renderValueSections();const inputs=list.parentElement.querySelectorAll('input');inputs[inputs.length-1]?.focus();invalidateGenerated();});
-    section.append(title,note,list,add); root.append(section);
+    const add=document.createElement('button');add.type='button';add.className='add-value';add.textContent='+ Add a value';
+    add.style.display=name==='Age'?'none':'inline-block';
+    add.addEventListener('click',()=>{valuesByCriterion[name].push('');renderValueSections();const inputs=section.querySelectorAll('input.value-input');inputs[inputs.length-1]?.focus();invalidateGenerated();});
+    section.append(list,add);root.append(section);
   });
 }
 function invalidateGenerated(clearMessage=true){
@@ -203,20 +247,25 @@ function showMessage(type,text){const m=$('message');m.className=type;m.textCont
 function hideMessage(){const m=$('message');m.className='';m.textContent='';}
 function collectAndValidate(){
   const size=Number($('classSize').value);
-  if(!Number.isInteger(size)||size<6||size>30) throw new Error('Please enter a class size between 6 and 30 pupils.');
-  if(selected.size===0) throw new Error('Please select at least one identity criterion.');
+  if(!Number.isInteger(size)||size<6||size>30)throw new Error('Please enter a class size between 6 and 30 pupils.');
+  if(selected.size===0)throw new Error('Please select at least one identity criterion.');
   const criteria=[];
   for(const name of CRITERIA){if(!selected.has(name))continue;
     const vals=(valuesByCriterion[name]||[]).map(v=>v.trim()).filter(Boolean);
+    const minimum=name==='Age'?2:3;
+    if(name==='Age'&&vals.length!==2)throw new Error('Age: please enter exactly 2 numeric values.');
+    if(name!=='Age'&&vals.length<minimum)throw new Error(name+': please enter at least 3 non-empty values.');
+    if(NUMERIC_CRITERIA.has(name)&&vals.some(v=>!/^[0-9]+$/.test(v)))throw new Error(name+': numbers only. Please remove any letters or symbols.');
     const seen=new Set();const duplicates=[];
     vals.forEach(v=>{const key=v.toLocaleLowerCase();if(seen.has(key))duplicates.push(v);seen.add(key);});
-    if(vals.length<4) throw new Error(name+': please enter at least 4 non-empty values.');
-    if(duplicates.length) throw new Error(name+': duplicate values are not allowed ('+[...new Set(duplicates)].join(', ')+').');
-    criteria.push({name,values:vals});
+    if(duplicates.length)throw new Error(name+': duplicate values are not allowed ('+[...new Set(duplicates)].join(', ')+').');
+    if(name==='Other'&&!titlesByCriterion.Other.trim())throw new Error('Other: please enter a title for this criterion.');
+    const label=name==='Other'?titlesByCriterion.Other.trim():name;
+    criteria.push({name:label,values:vals,sourceName:name});
   }
   const pairCount=Math.ceil(size/2);
   const combinationCount=criteria.reduce((total,c)=>total*c.values.length,1);
-  if(combinationCount<pairCount) throw new Error('There are not enough different profiles. You need '+pairCount+' unique profiles, but your selected criteria allow only '+combinationCount+'. Add more values or select more criteria.');
+  if(combinationCount<pairCount)throw new Error('There are not enough different profiles. You need '+pairCount+' unique profiles, but your selected criteria allow only '+combinationCount+'. Add more values or select more criteria.');
   return {size,pairCount,criteria,combinationCount};
 }
 function createUniqueProfiles(criteria,count){
@@ -252,7 +301,9 @@ function makeIdentityCard(card){
   const name=document.createElement('div');name.className='person-name';name.textContent=card.identity.name;
   const table=document.createElement('table');table.className='identity-table';const tbody=document.createElement('tbody');
   card.criteria.forEach((criterion,index)=>{const tr=document.createElement('tr');const td1=document.createElement('td');td1.textContent=criterion.name;const td2=document.createElement('td');td2.textContent=card.profile[index];tr.append(td1,td2);tbody.append(tr);});
-  table.append(tbody);article.append(portraitWrap,name,table);return article;
+  table.append(tbody);article.append(portraitWrap,name,table);
+  if(card.criteria.some(c=>c.sourceName==='Brother'||c.sourceName==='Sister')){const note=document.createElement('p');note.className='small-note';note.textContent='Do not count your twin.';note.style.textAlign='center';note.style.margin='7px 0 0';article.append(note);}
+  return article;
 }
 function showPreview(){
   hideMessage();
