@@ -60,6 +60,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .portrait{height:106px;width:106px;object-fit:contain;border-radius:8px}
 .portrait-fallback{height:100px;width:100px;border-radius:50%;background:#eef2f7;display:flex;align-items:center;justify-content:center;color:#718096;font-size:.8rem;text-align:center;padding:8px}
 .person-name{text-align:center;font-size:1.18rem;font-weight:800;margin:0 0 11px;color:#183d78}
+.sit-marker{display:block;width:30px;height:30px;object-fit:contain;margin:0 0 0 8px}
 .identity-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:.85rem}
 .identity-table td{border:1px solid #9eacbd;padding:7px 8px;vertical-align:middle;overflow-wrap:anywhere}
 .identity-table td:first-child{width:42%;font-weight:700;background:#f2f5f9}
@@ -79,6 +80,7 @@ footer{text-align:center;color:#77849a;font-size:.78rem;padding:0 20px 30px}
  #printArea .portrait{height:28mm;width:28mm}
  #printArea .portrait-fallback{height:27mm;width:27mm;font-size:7pt}
  #printArea .person-name{font-size:12pt;margin:0 0 2.5mm;color:#111}
+ #printArea .sit-marker{width:30px;height:30px;margin-left:8px}
  #printArea .identity-table{font-size:8.5pt}
  #printArea .identity-table td{padding:1.5mm 1.8mm;border:0.25mm solid #666}
  #printArea .identity-table td:first-child{background:#f0f0f0}
@@ -100,7 +102,7 @@ footer{text-align:center;color:#77849a;font-size:.78rem;padding:0 20px 30px}
       <div>
         <label for="classSize">Number of pupils</label>
         <input id="classSize" type="number" min="6" max="30" step="1" value="6">
-        <div class="hint">Choose a number from 6 to 30. For an odd number, one extra identity card will be created so that the teacher can take part.</div>
+        <div class="hint">Choose a number from 6 to 30. For an odd number, one extra identity card will be created.</div>
       </div>
       <div>
         <label>Choose the identity criteria</label>
@@ -132,8 +134,7 @@ footer{text-align:center;color:#77849a;font-size:.78rem;padding:0 20px 30px}
     <p class="small-note">In the print window, choose “Save as PDF” as the destination. Print settings: A4, portrait, scale 100% (or default).</p>
   </section>
 </main>
-<footer>Find Your Twin · A classroom resource
-<br>Inspired by the PES'work at the Faculté de l'Education de Nîmes (Gard, France) — November 2026</footer>
+<footer>Find Your Twin · A classroom resource</footer>
 <div id="printArea" aria-hidden="true"></div>
 <script>
 'use strict';
@@ -300,9 +301,19 @@ function makeIdentityCard(card){
   img.onerror=()=>{const fallback=document.createElement('div');fallback.className='portrait-fallback';fallback.textContent=card.identity.image+' not found';img.replaceWith(fallback);};
   portraitWrap.append(img);
   const name=document.createElement('div');name.className='person-name';name.textContent=card.identity.name;
+  let sitMarker=null;
+  const imageNumber=Number((card.identity.image.match(/Face_(\d+)\.jpg/i)||[])[1]);
+  if(Number.isInteger(imageNumber)&&imageNumber%2===0){
+    sitMarker=document.createElement('img');
+    sitMarker.className='sit-marker';
+    sitMarker.src='IMG/sit.png';
+    sitMarker.alt='';
+    sitMarker.setAttribute('aria-hidden','true');
+    sitMarker.onerror=()=>sitMarker.remove();
+  }
   const table=document.createElement('table');table.className='identity-table';const tbody=document.createElement('tbody');
   card.criteria.forEach((criterion,index)=>{const tr=document.createElement('tr');const td1=document.createElement('td');td1.textContent=criterion.name;const td2=document.createElement('td');td2.textContent=card.profile[index];tr.append(td1,td2);tbody.append(tr);});
-  table.append(tbody);article.append(portraitWrap,name,table);
+  table.append(tbody);article.append(portraitWrap,name);if(sitMarker)article.append(sitMarker);article.append(table);
   if(card.criteria.some(c=>c.sourceName==='Brother'||c.sourceName==='Sister')){const note=document.createElement('p');note.className='small-note';note.textContent='Do not count your twin.';note.style.textAlign='center';note.style.margin='7px 0 0';article.append(note);}
   return article;
 }
