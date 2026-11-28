@@ -62,12 +62,13 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .portrait-wrap{height:112px;display:flex;justify-content:center;align-items:center;margin-bottom:5px}
 .portrait{height:106px;width:106px;object-fit:contain;border-radius:8px}
 .portrait-fallback{height:100px;width:100px;border-radius:50%;background:#eef2f7;display:flex;align-items:center;justify-content:center;color:#718096;font-size:.8rem;text-align:center;padding:8px}
-.person-name{text-align:center;font-size:1.18rem;font-weight:800;margin:0 0 11px;color:#183d78}
-.sit-marker{display:block;width:30px;height:30px;object-fit:contain;margin:0 0 0 8px}
+.person-name{position:relative;text-align:center;font-size:1.18rem;font-weight:800;margin:0 0 11px;color:#183d78}
+.sit-marker{position:absolute;left:0;bottom:0;display:block;width:30px;height:30px;object-fit:contain;margin:0}
 .identity-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:.85rem}
 .identity-table td{border:1px solid #9eacbd;padding:7px 8px;vertical-align:middle;overflow-wrap:anywhere}
 .identity-table td:first-child{width:42%;font-weight:700;background:#f2f5f9}
-.criterion-icon{display:block;width:auto;height:7mm;max-width:100%;object-fit:contain;margin:0 auto}
+.criterion-icon{display:block;width:auto;height:24px;max-width:100%;object-fit:contain;margin:0 auto}
+.identity-table td:first-child:has(.criterion-icon){padding-top:3px;padding-bottom:3px}
 .small-note{font-size:.82rem;color:var(--muted)}
 #printArea{display:none}
 footer{text-align:center;color:#77849a;font-size:.78rem;padding:0 20px 30px}
@@ -84,7 +85,7 @@ footer{text-align:center;color:#77849a;font-size:.78rem;padding:0 20px 30px}
  #printArea .portrait{height:28mm;width:28mm}
  #printArea .portrait-fallback{height:27mm;width:27mm;font-size:7pt}
  #printArea .person-name{font-size:12pt;margin:0 0 2.5mm;color:#111}
- #printArea .sit-marker{width:30px;height:30px;margin-left:8px}
+ #printArea .sit-marker{width:30px;height:30px;margin:0}
  #printArea .identity-table{font-size:8.5pt}
  #printArea .identity-table tr{height:10mm}
  #printArea .identity-table td{height:10mm;padding:1mm 1.8mm;border:0.25mm solid #666;line-height:1.05}
@@ -177,6 +178,7 @@ function init(){
   renderCriterionOptions();
   $('classSize').addEventListener('input',()=>invalidateGenerated());
   $('previewBtn').addEventListener('click',showPreview);
+  $('preA1').addEventListener('change',()=>{if(generatedCards.length>=2){const on=$('preA1').checked;$('previewCards').innerHTML='';$('previewCards').append(makeIdentityCard(generatedCards[0],on),makeIdentityCard(generatedCards[1],on));}});
   $('pdfBtn').addEventListener('click',printCards);
   $('previewPdfBtn').addEventListener('click',printCards);
 }
@@ -313,7 +315,7 @@ function makeIdentityCard(card,usePreA1Icons=false){
   }
   const table=document.createElement('table');table.className='identity-table';const tbody=document.createElement('tbody');
   card.criteria.forEach((criterion,index)=>{const tr=document.createElement('tr');const td1=document.createElement('td');if(usePreA1Icons){const icon=document.createElement('img');icon.className='criterion-icon';icon.src='IMG/Icon/'+ICON_FILES[criterion.sourceName];icon.alt='';icon.setAttribute('aria-hidden','true');icon.onerror=()=>{td1.textContent=criterion.name;};td1.append(icon);}else{td1.textContent=criterion.name;}const td2=document.createElement('td');td2.textContent=card.profile[index];tr.append(td1,td2);tbody.append(tr);});
-  table.append(tbody);article.append(portraitWrap,name);if(sitMarker)article.append(sitMarker);article.append(table);
+  table.append(tbody);if(sitMarker)name.append(sitMarker);article.append(portraitWrap,name,table);
   if(card.criteria.some(c=>c.sourceName==='Brother'||c.sourceName==='Sister')){const note=document.createElement('p');note.className='small-note';note.textContent='Do not count your twin.';note.style.textAlign='center';note.style.margin='7px 0 0';article.append(note);}
   return article;
 }
@@ -321,7 +323,7 @@ function showPreview(){
   hideMessage();
   try{
     const data=collectAndValidate();const cards=buildCards(data);
-    $('previewCards').innerHTML='';$('previewCards').append(makeIdentityCard(cards[0]),makeIdentityCard(cards[1]));
+    $('previewCards').innerHTML='';$('previewCards').append(makeIdentityCard(cards[0],$('preA1').checked),makeIdentityCard(cards[1],$('preA1').checked));
     $('previewMeta').textContent=data.pairCount+' pairs · '+cards.length+' cards · '+data.combinationCount+' possible profiles';
     $('previewPanel').style.display='block';$('pdfBtn').disabled=false;
     showMessage('success','Your profiles are ready. Each pair shares the same characteristics, and every pair has a unique profile.');
