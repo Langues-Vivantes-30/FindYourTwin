@@ -13,6 +13,21 @@ header{background:linear-gradient(115deg,#183d78,#2b65b5);color:white;padding:28
 header .eyebrow{font-size:.76rem;letter-spacing:.16em;text-transform:uppercase;opacity:.82;font-weight:700}
 h1{font-size:clamp(2rem,4vw,2.8rem);margin:5px 0 3px;letter-spacing:-.03em}
 header p{margin:0;color:#e3edff;max-width:680px}
+header{position:relative}
+.header-logo{
+  --logo-h:150px;
+  position:absolute;
+  top:50%;
+  right:calc(max(0px,(100% - 1120px)/2) + 20px);
+  transform:translateY(-50%);
+  height:var(--logo-h);
+  width:auto;
+  padding:10px;
+  background:#fff;
+  border-radius:14px;
+  box-shadow:0 6px 18px rgba(0,0,0,.18);
+  object-fit:contain;
+}
 main{max-width:1120px;margin:28px auto 60px;padding:0 20px}
 .panel{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:24px;margin:0 0 20px;box-shadow:var(--shadow)}
 .panel h2{font-size:1.2rem;margin:0 0 5px}
@@ -73,6 +88,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #printArea{display:none}
 footer{text-align:center;color:#77849a;font-size:.78rem;padding:0 20px 30px}
 @media(max-width:850px){.criteria{grid-template-columns:repeat(3,minmax(0,1fr))}.top-grid{grid-template-columns:1fr}}
+header{padding-right:120px}
+.header-logo{--logo-h:80px;right:20px;padding:6px}
 @media(max-width:620px){main{padding:0 12px}.panel{padding:17px}.criteria{grid-template-columns:repeat(2,minmax(0,1fr))}#valueSections{grid-template-columns:1fr}.preview-pair{grid-template-columns:1fr}.preview-heading{align-items:flex-start;flex-direction:column}}
 @page{size:A4 portrait;margin:10mm}
 @media print{
@@ -97,6 +114,7 @@ footer{text-align:center;color:#77849a;font-size:.78rem;padding:0 20px 30px}
 </head>
 <body>
 <header>
+  <img class="header-logo" src="IMG/logoFYT.png" alt="Find Your Twin logo" onerror="this.remove()">
   <div class="eyebrow">Classroom speaking activity</div>
   <h1>Find Your Twin</h1>
   <p>Create identity cards and help pupils find the classmate who shares their profile.</p>
