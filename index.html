@@ -22,6 +22,9 @@ label{font-weight:700;font-size:.92rem;display:block;margin-bottom:7px}
 input[type=number],.value-input{width:100%;border:1px solid #c8d3e2;border-radius:8px;padding:10px 11px;font:inherit;color:var(--ink);background:white;min-width:0}
 input:focus{outline:3px solid #cfe0fb;border-color:var(--blue)}
 .hint{font-size:.82rem;color:var(--muted);margin-top:6px}
+.level-toggle{display:flex;align-items:center;gap:8px;margin:12px 0 0;font-size:.9rem;font-weight:700}
+.level-toggle input{width:16px;height:16px;accent-color:var(--blue);margin:0}
+.level-explanation{font-size:.8rem;color:var(--muted);margin:5px 0 0}
 .criteria{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .criterion-option{border:1px solid var(--line);border-radius:9px;padding:10px 11px;display:flex;align-items:center;gap:8px;font-size:.9rem;font-weight:600;cursor:pointer;background:#fff}
 .criterion-option:has(input:checked){background:var(--pale);border-color:#9bb8e5}
@@ -59,11 +62,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .portrait-wrap{height:112px;display:flex;justify-content:center;align-items:center;margin-bottom:5px}
 .portrait{height:106px;width:106px;object-fit:contain;border-radius:8px}
 .portrait-fallback{height:100px;width:100px;border-radius:50%;background:#eef2f7;display:flex;align-items:center;justify-content:center;color:#718096;font-size:.8rem;text-align:center;padding:8px}
-.person-name{position:relative;text-align:center;font-size:1.18rem;font-weight:800;margin:0 0 11px;color:#183d78}
-.sit-marker{position:absolute;left:0;bottom:0;width:30px;height:30px;object-fit:contain;margin:0;display:block}
+.person-name{text-align:center;font-size:1.18rem;font-weight:800;margin:0 0 11px;color:#183d78}
+.sit-marker{display:block;width:30px;height:30px;object-fit:contain;margin:0 0 0 8px}
 .identity-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:.85rem}
 .identity-table td{border:1px solid #9eacbd;padding:7px 8px;vertical-align:middle;overflow-wrap:anywhere}
 .identity-table td:first-child{width:42%;font-weight:700;background:#f2f5f9}
+.criterion-icon{display:block;width:auto;height:7mm;max-width:100%;object-fit:contain;margin:0 auto}
 .small-note{font-size:.82rem;color:var(--muted)}
 #printArea{display:none}
 footer{text-align:center;color:#77849a;font-size:.78rem;padding:0 20px 30px}
@@ -80,9 +84,11 @@ footer{text-align:center;color:#77849a;font-size:.78rem;padding:0 20px 30px}
  #printArea .portrait{height:28mm;width:28mm}
  #printArea .portrait-fallback{height:27mm;width:27mm;font-size:7pt}
  #printArea .person-name{font-size:12pt;margin:0 0 2.5mm;color:#111}
- #printArea .sit-marker{width:30px;height:30px;margin:0}
+ #printArea .sit-marker{width:30px;height:30px;margin-left:8px}
  #printArea .identity-table{font-size:8.5pt}
- #printArea .identity-table td{padding:1.5mm 1.8mm;border:0.25mm solid #666}
+ #printArea .identity-table tr{height:10mm}
+ #printArea .identity-table td{height:10mm;padding:1mm 1.8mm;border:0.25mm solid #666;line-height:1.05}
+ #printArea .criterion-icon{height:7mm;max-height:7mm;width:auto;max-width:100%}
  #printArea .identity-table td:first-child{background:#f0f0f0}
  #printArea .identity-card{break-inside:avoid;page-break-inside:avoid}
 }
@@ -102,12 +108,13 @@ footer{text-align:center;color:#77849a;font-size:.78rem;padding:0 20px 30px}
       <div>
         <label for="classSize">Number of pupils</label>
         <input id="classSize" type="number" min="6" max="30" step="1" value="6">
-        <div class="hint">Choose a number from 6 to 30. For an odd number, one extra identity card will be created so that the teacher can participate.</div>
+        <div class="hint">Choose a number from 6 to 30. For an odd number, one extra identity card will be created.</div>
+        <label class="level-toggle" for="preA1"><input id="preA1" type="checkbox"> pre-A1</label>
+        <p class="level-explanation">If you choose pre-A1, name of the criteria in the table will be changed by icon.</p>
       </div>
       <div>
         <label>Choose the identity criteria</label>
         <div class="criteria" id="criteriaOptions"></div>
-        <div class="criterion-tools"><button class="add-value" id="addCriterionBtn" type="button">+ Add another criterion</button><div class="hint" id="criteriaLimitHint">Choose up to 3 criteria. You can unlock more when needed.</div></div>
       </div>
     </div>
   </section>
@@ -134,8 +141,7 @@ footer{text-align:center;color:#77849a;font-size:.78rem;padding:0 20px 30px}
     <p class="small-note">In the print window, choose “Save as PDF” as the destination. Print settings: A4, portrait, scale 100% (or default).</p>
   </section>
 </main>
-<footer>Find Your Twin · A classroom resource
-<br>Inspired by the work of the PES at the Faculté de l'Education in Nîmes (Gard, France) — November 2026</footer>
+<footer>Find Your Twin · A classroom resource</footer>
 <div id="printArea" aria-hidden="true"></div>
 <script>
 'use strict';
@@ -157,39 +163,31 @@ const IDENTITIES = [
   {image:'Face_29.jpg',name:'Alexa',pair:15},{image:'Face_30.jpg',name:'William',pair:15}
 ];
 const CRITERIA = ['Age','City','Phone number','Brother','Sister','Favourite food','Favourite colour','Pet','Sport','Other'];
+const ICON_FILES = {'Age':'birthday.png','City':'city.png','Phone number':'phone.png','Brother':'brother.png','Sister':'sister.png','Favourite food':'food.png','Favourite colour':'brush.png','Pet':'pet.png','Sport':'sport.png','Other':'other.png'};
 const NUMERIC_CRITERIA = new Set(['Age','Phone number','Brother','Sister']);
 const selected = new Set();
 const valuesByCriterion = {};
 const titlesByCriterion = {};
-let criteriaLimit = 3;
 let generatedCards = [];
 let currentProfiles = [];
 const $ = id => document.getElementById(id);
 
 function init(){
   renderCriterionOptions();
-  $('addCriterionBtn').addEventListener('click',()=>{if(criteriaLimit<CRITERIA.length){criteriaLimit++;renderCriterionOptions();}});
   $('classSize').addEventListener('input',()=>invalidateGenerated());
   $('previewBtn').addEventListener('click',showPreview);
   $('pdfBtn').addEventListener('click',printCards);
   $('previewPdfBtn').addEventListener('click',printCards);
-  updateCriterionLimitUI();
 }
 function renderCriterionOptions(){
   const options=$('criteriaOptions');options.innerHTML='';
   CRITERIA.forEach((name,index)=>{
     const label=document.createElement('label');label.className='criterion-option';
     const cb=document.createElement('input');cb.type='checkbox';cb.value=name;cb.id='criterion-'+index;cb.checked=selected.has(name);
-    cb.disabled=!selected.has(name)&&selected.size>=criteriaLimit;
     cb.addEventListener('change',()=>toggleCriterion(name,cb.checked));
     const span=document.createElement('span');span.textContent=name;
     label.append(cb,span);options.append(label);
   });
-  updateCriterionLimitUI();
-}
-function updateCriterionLimitUI(){
-  $('addCriterionBtn').style.display=criteriaLimit>=CRITERIA.length?'none':'inline-block';
-  $('criteriaLimitHint').textContent='Choose up to '+criteriaLimit+' criteria. You can unlock more when needed.';
 }
 function toggleCriterion(name,isSelected){
   if(isSelected){
@@ -268,7 +266,7 @@ function collectAndValidate(){
   }
   const pairCount=Math.ceil(size/2);
   const combinationCount=criteria.reduce((total,c)=>total*c.values.length,1);
-  if(combinationCount<pairCount)throw new Error('There are not enough different profiles. You need '+pairCount+' unique profiles, but your selected criteria allow only '+combinationCount+'. Add more values or select more criteria.');
+  if(combinationCount<pairCount)throw new Error('There are not enough different profiles to create all the identity cards. You need '+pairCount+' unique profiles, but your selected criteria allow only '+combinationCount+'. Please add more characteristics (values) or select additional criteria.');
   return {size,pairCount,criteria,combinationCount};
 }
 function createUniqueProfiles(criteria,count){
@@ -295,7 +293,7 @@ function buildCards(data){
   generatedCards=cards;
   return cards;
 }
-function makeIdentityCard(card){
+function makeIdentityCard(card,usePreA1Icons=false){
   const article=document.createElement('article');article.className='identity-card';
   const portraitWrap=document.createElement('div');portraitWrap.className='portrait-wrap';
   const img=document.createElement('img');img.className='portrait';img.src='IMG/'+card.identity.image;img.alt='Portrait of '+card.identity.name;
@@ -313,8 +311,8 @@ function makeIdentityCard(card){
     sitMarker.onerror=()=>sitMarker.remove();
   }
   const table=document.createElement('table');table.className='identity-table';const tbody=document.createElement('tbody');
-  card.criteria.forEach((criterion,index)=>{const tr=document.createElement('tr');const td1=document.createElement('td');td1.textContent=criterion.name;const td2=document.createElement('td');td2.textContent=card.profile[index];tr.append(td1,td2);tbody.append(tr);});
-  table.append(tbody);if(sitMarker)name.append(sitMarker);article.append(portraitWrap,name,table);
+  card.criteria.forEach((criterion,index)=>{const tr=document.createElement('tr');const td1=document.createElement('td');if(usePreA1Icons){const icon=document.createElement('img');icon.className='criterion-icon';icon.src='IMG/Icon/'+ICON_FILES[criterion.sourceName];icon.alt='';icon.setAttribute('aria-hidden','true');icon.onerror=()=>{td1.textContent=criterion.name;};td1.append(icon);}else{td1.textContent=criterion.name;}const td2=document.createElement('td');td2.textContent=card.profile[index];tr.append(td1,td2);tbody.append(tr);});
+  table.append(tbody);article.append(portraitWrap,name);if(sitMarker)article.append(sitMarker);article.append(table);
   if(card.criteria.some(c=>c.sourceName==='Brother'||c.sourceName==='Sister')){const note=document.createElement('p');note.className='small-note';note.textContent='Do not count your twin.';note.style.textAlign='center';note.style.margin='7px 0 0';article.append(note);}
   return article;
 }
@@ -332,7 +330,8 @@ function showPreview(){
 function printCards(){
   if(!generatedCards.length){showPreview();if(!generatedCards.length)return;}
   const area=$('printArea');area.innerHTML='';const grid=document.createElement('div');grid.className='print-grid';
-  generatedCards.forEach(card=>grid.append(makeIdentityCard(card)));
+  const usePreA1Icons=$('preA1').checked;
+  generatedCards.forEach(card=>grid.append(makeIdentityCard(card,usePreA1Icons)));
   area.append(grid);
   window.print();
 }
